@@ -1,6 +1,51 @@
 import { Hono } from 'hono'
+import cron from 'node-cron'
+import { createSyncJob } from './services/sync'
 
 const app = new Hono()
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'DATABASE_URL',
+  'COMMUTERLINE_API_BASE_URL',
+] as const
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`Missing required environment variable: ${envVar}`)
+    process.exit(1)
+  }
+}
+
+// Get environment variables
+const upstreamApiUrl = process.env.COMMUTERLINE_API_BASE_URL!
+const bearerToken = process.env.OFFICIAL_API_TOKEN || ''
+
+// Create sync job instance
+const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
+
+// Configure scheduled sync job
+// Cron expression "59 16 * * *" runs at 16:59 UTC, which is 23:59 WIB (UTC+7)
+const cronExpression = '59 16 * * *'
+
+cron.schedule(
+  cronExpression,
+  async () => {
+    console.log('Starting scheduled sync at 23:59 WIB')
+    try {
+      await syncJob.runSync()
+    } catch (error) {
+      console.error('Scheduled sync failed:', error)
+    }
+  },
+  {
+    timezone: 'Asia/Jakarta',
+  }
+)
+
+console.log(
+  `Scheduled sync job configured: ${cronExpression} (Asia/Jakarta timezone)`
+)
 
 app.get('/', (c) => {
   return c.text('Hello Hono!')
