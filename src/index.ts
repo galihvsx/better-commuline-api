@@ -1,8 +1,18 @@
 import { Hono } from 'hono'
+import { logger } from 'hono/logger'
 import cron from 'node-cron'
 import { createSyncJob } from './services/sync'
+import { databaseMiddleware } from './middleware/database'
+import { errorHandler } from './middleware/error-handler'
 
 const app = new Hono()
+
+// Apply middleware in correct order
+app.use('*', logger())
+app.use('*', databaseMiddleware())
+
+// Apply global error handler
+app.onError(errorHandler)
 
 // Validate required environment variables
 const requiredEnvVars = [

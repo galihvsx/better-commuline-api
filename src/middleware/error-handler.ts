@@ -1,0 +1,27 @@
+import { ErrorHandler } from 'hono'
+import { HTTPException } from 'hono/http-exception'
+
+export const errorHandler: ErrorHandler = (err, c) => {
+  // Handle HTTPException (expected errors)
+  if (err instanceof HTTPException) {
+    return c.json(
+      {
+        error: err.message,
+        status: err.status,
+      },
+      err.status
+    )
+  }
+
+  // Log unexpected errors
+  console.error('Unhandled error:', err)
+
+  // Return generic error response for unexpected errors
+  return c.json(
+    {
+      error: 'Internal Server Error',
+      status: 500,
+    },
+    500
+  )
+}
