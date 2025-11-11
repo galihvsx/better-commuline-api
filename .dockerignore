@@ -10,3 +10,5 @@ docs
 .kiro
 dist
 coverage
+*.md
+!README.md

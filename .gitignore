@@ -1,7 +1,10 @@
 # deps
-node_modules/
+node_modules
 .env
 .kiro/
 docs/
 drizzle/
 dist/
+*.md
+src/README.test.md
+!README.md
