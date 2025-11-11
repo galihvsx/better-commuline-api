@@ -306,17 +306,18 @@ Build and run with Docker:
 
 ```bash
 # Build image
-docker build -t krl-api .
+docker build -t krl-api:latest .
 
 # Run container
-docker run -p 3000:3000 --env-file .env krl-api
+docker run -d \
+  --name krl-api \
+  -p 3000:3000 \
+  --env-file .env \
+  --restart unless-stopped \
+  krl-api:latest
 ```
 
-### Docker Compose
-
-```bash
-docker-compose up -d
-```
+For complete deployment guide including production setup, health checks, and troubleshooting, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ---
 
