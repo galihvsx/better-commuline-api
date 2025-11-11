@@ -8,6 +8,7 @@ import { createRateLimiter } from './middleware/rate-limiter'
 import stationsRoute from './routes/stations'
 import schedulesRoute from './routes/schedules'
 import faresRoute from './routes/fares'
+import routemapsRoute from './routes/routemaps'
 import syncRoute from './routes/sync'
 
 const app = new Hono()
@@ -67,6 +68,7 @@ console.log(
 app.route('/stations', stationsRoute)
 app.route('/schedules', schedulesRoute)
 app.route('/fares', faresRoute)
+app.route('/routemaps', routemapsRoute)
 app.route('/', syncRoute)
 
 app.get('/', (c) => {
