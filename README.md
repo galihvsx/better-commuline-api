@@ -111,18 +111,40 @@ Retrieve all KRL stations (cached from daily sync)
 ### Schedule Information
 
 #### `GET /schedules`
-Get train schedules for a specific station
-
-> **Note**: Schedule caching refactor in progress. Currently proxies to upstream API. Future versions will serve from database cache with daily synchronization.
+Get train schedules for a specific station (served from database cache)
 
 **Query Parameters:**
 - `stationid` (required): Station ID (e.g., "BTA")
 - `timefrom` (required): Start time in HH:mm format (e.g., "06:00")
 - `timeto` (required): End time in HH:mm format (e.g., "08:00")
 
+**Cache Information:**
+- Schedule data is cached in the database and refreshed daily at 23:59 WIB (16:59 UTC)
+- Full-day schedules (00:00-23:59) are stored for all active stations
+- Time range filtering is performed on cached data for fast response times
+- Maintains backward compatibility with previous API structure
+
 **Example:**
 ```bash
 curl "http://localhost:8917/schedules?stationid=BTA&timefrom=06:00&timeto=08:00"
+```
+
+**Response:**
+```json
+{
+  "status": 200,
+  "data": [
+    {
+      "train_id": "1234",
+      "ka_name": "COMMUTER LINE",
+      "route_name": "BOGOR-JAKARTA KOTA",
+      "dest": "JAKARTA KOTA",
+      "time_est": "06:15:00",
+      "color": "#FF0000",
+      "dest_time": "07:45:00"
+    }
+  ]
+}
 ```
 
 ---
@@ -178,7 +200,7 @@ Check the status of the last synchronization
 ```
 
 #### `POST /sync`
-Manually trigger a synchronization job
+Manually trigger a synchronization job (stations, route maps, and schedules)
 
 **Response:**
 ```json
@@ -189,6 +211,25 @@ Manually trigger a synchronization job
 
 **Status Codes:**
 - `202`: Sync started successfully
+- `409`: Sync already in progress
+
+**Note:** The sync job includes:
+- Station data synchronization
+- Route map synchronization
+- Schedule data synchronization (full-day schedules for all active stations)
+
+#### `POST /sync/schedules`
+Manually trigger schedule synchronization only
+
+**Response:**
+```json
+{
+  "message": "Schedule sync started"
+}
+```
+
+**Status Codes:**
+- `202`: Schedule sync started successfully
 - `409`: Sync already in progress
 
 ---

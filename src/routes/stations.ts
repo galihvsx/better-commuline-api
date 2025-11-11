@@ -1,8 +1,15 @@
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { stations } from '../db/schema'
+import type { db } from '../db'
 
-const app = new Hono()
+type Env = {
+  Variables: {
+    db: typeof db
+  }
+}
+
+const app = new Hono<Env>()
 
 app.get('/', async (c) => {
   try {

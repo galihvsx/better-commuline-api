@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'bun:test'
 import { parseTimeToTimestamp } from '../../src/utils/time-parsing'
 
 describe('parseTimeToTimestamp', () => {

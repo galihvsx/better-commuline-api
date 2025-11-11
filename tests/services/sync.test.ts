@@ -2,6 +2,15 @@ import { describe, test, expect, beforeEach, mock } from 'bun:test'
 import { createSyncJob, type SyncStatus } from '../../src/services/sync'
 import type { UpstreamApiClient } from '../../src/services/upstream-api'
 
+const createMockApiClient = (overrides: Partial<UpstreamApiClient> = {}): UpstreamApiClient => ({
+  getStations: mock(() => Promise.resolve({ status: 200, message: 'Success', data: [] })),
+  getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
+  getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
+  getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
+  sendPreflightRequest: mock(() => Promise.resolve(true)),
+  ...overrides,
+})
+
 const mockDb = {
   insert: mock(() => ({
     values: mock(() => Promise.resolve()),
@@ -30,7 +39,7 @@ describe('SyncJob', () => {
 
   describe('runSync', () => {
     test('should complete sync successfully', async () => {
-      const mockApiClient: UpstreamApiClient = {
+      const mockApiClient = createMockApiClient({
         getStations: mock(() =>
           Promise.resolve({
             status: 200,
@@ -56,9 +65,7 @@ describe('SyncJob', () => {
             ],
           })
         ),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      })
 
       mock.module('./upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -92,23 +99,7 @@ describe('SyncJob', () => {
 
       mock.module('../db', () => ({ db: mockDb }))
 
-      const mockApiClient: UpstreamApiClient = {
-        getStations: mock(() =>
-          Promise.resolve({
-            status: 200,
-            message: 'Success',
-            data: [],
-          })
-        ),
-        getRouteMaps: mock(() =>
-          Promise.resolve({
-            status: 200,
-            data: [],
-          })
-        ),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      const mockApiClient = createMockApiClient()
 
       mock.module('./upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -133,14 +124,11 @@ describe('SyncJob', () => {
         }
       }
 
-      const mockApiClient: UpstreamApiClient = {
+      const mockApiClient = createMockApiClient({
         getStations: mock(() => {
           throw new UpstreamApiError('API Error', 500, 'Server Error')
         }),
-        getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      })
 
       mock.module('./upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -153,7 +141,7 @@ describe('SyncJob', () => {
     })
 
     test('should handle non-200 status from upstream API', async () => {
-      const mockApiClient: UpstreamApiClient = {
+      const mockApiClient = createMockApiClient({
         getStations: mock(() =>
           Promise.resolve({
             status: 500,
@@ -161,10 +149,7 @@ describe('SyncJob', () => {
             data: [],
           })
         ),
-        getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      })
 
       mock.module('./upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -197,7 +182,7 @@ describe('SyncJob', () => {
 
       mock.module('../db', () => ({ db: mockDb }))
 
-      const mockApiClient: UpstreamApiClient = {
+      const mockApiClient = createMockApiClient({
         getStations: mock(() =>
           Promise.resolve({
             status: 200,
@@ -223,9 +208,7 @@ describe('SyncJob', () => {
             ],
           })
         ),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      })
 
       mock.module('./upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -372,12 +355,7 @@ describe('SyncJob', () => {
         createScheduleSyncService: () => mockScheduleSyncService,
       }))
 
-      const mockApiClient: UpstreamApiClient = {
-        getStations: mock(() => Promise.resolve({ status: 200, message: 'Success', data: [] })),
-        getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      const mockApiClient = createMockApiClient()
 
       mock.module('../../src/services/upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -418,12 +396,7 @@ describe('SyncJob', () => {
         createScheduleSyncService: () => mockScheduleSyncService,
       }))
 
-      const mockApiClient: UpstreamApiClient = {
-        getStations: mock(() => Promise.resolve({ status: 200, message: 'Success', data: [] })),
-        getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      const mockApiClient = createMockApiClient()
 
       mock.module('../../src/services/upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -464,12 +437,7 @@ describe('SyncJob', () => {
         createScheduleSyncService: () => mockScheduleSyncService,
       }))
 
-      const mockApiClient: UpstreamApiClient = {
-        getStations: mock(() => Promise.resolve({ status: 200, message: 'Success', data: [] })),
-        getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      const mockApiClient = createMockApiClient()
 
       mock.module('../../src/services/upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -496,23 +464,7 @@ describe('SyncJob', () => {
         createScheduleSyncService: () => mockScheduleSyncService,
       }))
 
-      const mockApiClient: UpstreamApiClient = {
-        getStations: mock(() =>
-          Promise.resolve({
-            status: 200,
-            message: 'Success',
-            data: [],
-          })
-        ),
-        getRouteMaps: mock(() =>
-          Promise.resolve({
-            status: 200,
-            data: [],
-          })
-        ),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      const mockApiClient = createMockApiClient()
 
       mock.module('../../src/services/upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -539,23 +491,7 @@ describe('SyncJob', () => {
         createScheduleSyncService: () => mockScheduleSyncService,
       }))
 
-      const mockApiClient: UpstreamApiClient = {
-        getStations: mock(() =>
-          Promise.resolve({
-            status: 200,
-            message: 'Success',
-            data: [],
-          })
-        ),
-        getRouteMaps: mock(() =>
-          Promise.resolve({
-            status: 200,
-            data: [],
-          })
-        ),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      const mockApiClient = createMockApiClient()
 
       mock.module('../../src/services/upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
@@ -582,23 +518,7 @@ describe('SyncJob', () => {
         createScheduleSyncService: () => mockScheduleSyncService,
       }))
 
-      const mockApiClient: UpstreamApiClient = {
-        getStations: mock(() =>
-          Promise.resolve({
-            status: 200,
-            message: 'Success',
-            data: [],
-          })
-        ),
-        getRouteMaps: mock(() =>
-          Promise.resolve({
-            status: 200,
-            data: [],
-          })
-        ),
-        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
-        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
-      }
+      const mockApiClient = createMockApiClient()
 
       mock.module('../../src/services/upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,

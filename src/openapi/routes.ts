@@ -43,14 +43,14 @@ export const getStationsRoute = createRoute({
 
 /**
  * GET /schedules
- * Retrieve real-time schedule data by proxying to upstream API
+ * Retrieve train schedule data from database cache
  */
 export const getSchedulesRoute = createRoute({
   method: 'get',
   path: '/schedules',
   summary: 'Get train schedules',
   description:
-    'Retrieve real-time train schedule data for a specific station and time range (current day only)',
+    'Retrieve train schedule data for a specific station and time range from the database cache. Schedule data is synchronized daily at 23:59 WIB (16:59 UTC) and covers full-day schedules (00:00-23:59). This endpoint maintains backward compatibility with the previous API structure.',
   tags: ['Schedules'],
   request: {
     query: ScheduleQuerySchema,
@@ -260,11 +260,66 @@ export const postSyncRoute = createRoute({
   path: '/sync',
   summary: 'Trigger manual sync',
   description:
-    'Manually trigger a data synchronization. Returns 409 if sync is already in progress.',
+    'Manually trigger a full data synchronization including stations, route maps, and schedules. Returns 409 if sync is already in progress.',
   tags: ['Synchronization'],
   responses: {
     202: {
       description: 'Sync has started successfully',
+      content: {
+        'application/json': {
+          schema: SyncTriggerResponseSchema,
+        },
+      },
+    },
+    409: {
+      description: 'Conflict - sync is already in progress',
+      content: {
+        'application/json': {
+          schema: ErrorSchema,
+          example: {
+            error: 'Sync is already in progress',
+            status: 409,
+          },
+        },
+      },
+    },
+    429: {
+      description: 'Too many requests - rate limit exceeded',
+      content: {
+        'application/json': {
+          schema: ErrorSchema,
+          example: {
+            error: 'Too many requests, please try again later',
+            status: 429,
+          },
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorSchema,
+        },
+      },
+    },
+  },
+})
+
+/**
+ * POST /sync/schedules
+ * Manually trigger schedule synchronization only
+ */
+export const postScheduleSyncRoute = createRoute({
+  method: 'post',
+  path: '/sync/schedules',
+  summary: 'Trigger schedule sync',
+  description:
+    'Manually trigger schedule synchronization for all active stations. Fetches full-day schedules (00:00-23:59) from upstream API and updates the database cache. Returns 409 if sync is already in progress.',
+  tags: ['Synchronization'],
+  responses: {
+    202: {
+      description: 'Schedule sync has started successfully',
       content: {
         'application/json': {
           schema: SyncTriggerResponseSchema,

@@ -28,8 +28,39 @@ function validateEnvironmentVariables(): void {
     process.exit(1)
   }
 
+  if (!process.env.ENABLE_SCHEDULE_SYNC) {
+    process.env.ENABLE_SCHEDULE_SYNC = 'true'
+  }
+
+  if (!process.env.SCHEDULE_SYNC_BATCH_SIZE) {
+    process.env.SCHEDULE_SYNC_BATCH_SIZE = '5'
+  } else {
+    const batchSize = parseInt(process.env.SCHEDULE_SYNC_BATCH_SIZE, 10)
+    if (isNaN(batchSize) || batchSize < 1) {
+      console.warn(
+        `[${new Date().toISOString()}] WARNING: Invalid SCHEDULE_SYNC_BATCH_SIZE value. Using default: 5`
+      )
+      process.env.SCHEDULE_SYNC_BATCH_SIZE = '5'
+    }
+  }
+
+  if (!process.env.SCHEDULE_SYNC_DELAY_MS) {
+    process.env.SCHEDULE_SYNC_DELAY_MS = '5000'
+  } else {
+    const delayMs = parseInt(process.env.SCHEDULE_SYNC_DELAY_MS, 10)
+    if (isNaN(delayMs) || delayMs < 0) {
+      console.warn(
+        `[${new Date().toISOString()}] WARNING: Invalid SCHEDULE_SYNC_DELAY_MS value. Using default: 5000`
+      )
+      process.env.SCHEDULE_SYNC_DELAY_MS = '5000'
+    }
+  }
+
   console.log(
     `[${new Date().toISOString()}] Environment variables validated successfully`
+  )
+  console.log(
+    `[${new Date().toISOString()}] Schedule sync configuration: ENABLE=${process.env.ENABLE_SCHEDULE_SYNC}, BATCH_SIZE=${process.env.SCHEDULE_SYNC_BATCH_SIZE}, DELAY_MS=${process.env.SCHEDULE_SYNC_DELAY_MS}`
   )
 }
 

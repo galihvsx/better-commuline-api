@@ -31,8 +31,8 @@ export function createScheduleSyncService(
 
       console.log(`[${new Date().toISOString()}] Found ${activeStations.length} active stations to sync`)
 
-      const BATCH_SIZE = 5
-      const DELAY_MS = 5000
+      const BATCH_SIZE = parseInt(process.env.SCHEDULE_SYNC_BATCH_SIZE || '5', 10)
+      const DELAY_MS = parseInt(process.env.SCHEDULE_SYNC_DELAY_MS || '5000', 10)
 
       const batches: typeof activeStations[] = []
       for (let i = 0; i < activeStations.length; i += BATCH_SIZE) {
