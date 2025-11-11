@@ -81,7 +81,7 @@ Better Commuline API is a robust, production-ready API that provides cached acce
    bun run dev
    ```
 
-The API will be available at `http://localhost:3000`
+The API will be available at `http://localhost:8917`
 
 ---
 
@@ -120,7 +120,7 @@ Get train schedules for a specific station (proxied to upstream API)
 
 **Example:**
 ```bash
-curl "http://localhost:3000/schedules?stationid=BTA&timefrom=06:00&timeto=08:00"
+curl "http://localhost:8917/schedules?stationid=BTA&timefrom=06:00&timeto=08:00"
 ```
 
 ---
@@ -136,7 +136,7 @@ Calculate fare between two stations (proxied to upstream API)
 
 **Example:**
 ```bash
-curl "http://localhost:3000/fares?stationfrom=BTA&stationto=THB"
+curl "http://localhost:8917/fares?stationfrom=BTA&stationto=THB"
 ```
 
 ---
@@ -213,14 +213,14 @@ Create a `.env` file in the root directory:
 
 ```env
 # Server Configuration
-PORT=3000
+PORT=8917
 NODE_ENV=development
 
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/krl_api
 
 # Upstream API
-COMMUTERLINE_API_BASE_URL=https://api-partner.krl.co.id
+UPSTREAM_API_URL=https://api-partner.krl.co.id
 OFFICIAL_API_TOKEN=your_bearer_token_here
 
 # Sync Configuration (optional)
@@ -311,11 +311,13 @@ docker build -t krl-api:latest .
 # Run container
 docker run -d \
   --name krl-api \
-  -p 3000:3000 \
+  -p 8917:8917 \
   --env-file .env \
   --restart unless-stopped \
   krl-api:latest
 ```
+
+API akan tersedia di `http://localhost:8917`
 
 For complete deployment guide including production setup, health checks, and troubleshooting, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
