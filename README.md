@@ -55,8 +55,8 @@ Better Commuline API is a robust, production-ready API that provides cached acce
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/krl-api.git
-   cd krl-api
+   git clone https://github.com/galihvsx/better-commuline-api.git
+   cd better-commuline-api
    ```
 
 2. **Install dependencies**
@@ -358,6 +358,7 @@ For complete deployment guide including production setup, health checks, and tro
 - **Validation**: [Zod](https://zod.dev) - TypeScript-first schema validation
 - **Scheduling**: [node-cron](https://github.com/node-cron/node-cron) - Task scheduler
 - **Rate Limiting**: [hono-rate-limiter](https://github.com/rhinobase/hono-rate-limiter)
+- **HTTP Client**: Native Fetch API with CORS preflight support
 
 ### Design Patterns
 
@@ -397,8 +398,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <div align="center">
   <p>Made with ❤️ for Indonesian commuters</p>
   <p>
-    <a href="https://github.com/yourusername/krl-api/issues">Report Bug</a>
+    <a href="https://github.com/galihvsx/better-commuline-api/issues">Report Bug</a>
     ·
-    <a href="https://github.com/yourusername/krl-api/issues">Request Feature</a>
+    <a href="https://github.com/galihvsx/better-commuline-api/issues">Request Feature</a>
   </p>
 </div>
