@@ -1,11 +1,14 @@
 {
   "name": "krl-api",
+  "version": "1.0.0",
+  "description": "Commuter Line API system built with Hono framework",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "bun test"
   },
   "dependencies": {
     "hono": "^4.10.4",
