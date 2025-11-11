@@ -71,7 +71,7 @@ app.openapi(getSchedulesRoute, async (c) => {
   try {
     const { stationid, timefrom, timeto } = c.req.valid('query')
 
-    const upstreamApiUrl = process.env.COMMUTERLINE_API_BASE_URL!
+    const upstreamApiUrl = process.env.UPSTREAM_API_URL!
     const bearerToken = process.env.OFFICIAL_API_TOKEN || ''
 
     const upstreamUrl = new URL('/krl-webs/v1/schedules', upstreamApiUrl)
@@ -143,7 +143,7 @@ app.openapi(getFaresRoute, async (c) => {
   try {
     const { stationfrom, stationto } = c.req.valid('query')
 
-    const upstreamApiUrl = process.env.COMMUTERLINE_API_BASE_URL!
+    const upstreamApiUrl = process.env.UPSTREAM_API_URL!
     const bearerToken = process.env.OFFICIAL_API_TOKEN || ''
 
     const upstreamUrl = new URL('/krl-webs/v1/fare', upstreamApiUrl)
@@ -229,7 +229,7 @@ app.openapi(getRouteMapsRoute, async (c) => {
  */
 app.openapi(getSyncStatusRoute, async (c) => {
   try {
-    const upstreamApiUrl = process.env.COMMUTERLINE_API_BASE_URL
+    const upstreamApiUrl = process.env.UPSTREAM_API_URL
     const bearerToken = process.env.OFFICIAL_API_TOKEN
 
     if (!upstreamApiUrl || !bearerToken) {
@@ -280,12 +280,9 @@ app.openapi(getSyncStatusRoute, async (c) => {
   }
 })
 
-/**
- * POST /sync - Trigger manual sync
- */
-app.openapi(postSyncRoute, async (c) => {
+app.post('/sync', async (c) => {
   try {
-    const upstreamApiUrl = process.env.COMMUTERLINE_API_BASE_URL
+    const upstreamApiUrl = process.env.UPSTREAM_API_URL
     const bearerToken = process.env.OFFICIAL_API_TOKEN
 
     if (!upstreamApiUrl || !bearerToken) {
@@ -338,7 +335,7 @@ app.doc('/openapi.json', {
   },
   servers: [
     {
-      url: 'http://localhost:3000',
+      url: 'http://localhost:8917',
       description: 'Development server',
     },
   ],

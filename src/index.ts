@@ -14,7 +14,7 @@ import app from './app'
 function validateEnvironmentVariables(): void {
   const requiredEnvVars = [
     'DATABASE_URL',
-    'COMMUTERLINE_API_BASE_URL',
+    'UPSTREAM_API_URL',
     'OFFICIAL_API_TOKEN',
   ] as const
 
@@ -47,7 +47,7 @@ function validateEnvironmentVariables(): void {
  * Requirement: 6.5
  */
 function startCronScheduler(): void {
-  const upstreamApiUrl = process.env.COMMUTERLINE_API_BASE_URL!
+  const upstreamApiUrl = process.env.UPSTREAM_API_URL!
   const bearerToken = process.env.OFFICIAL_API_TOKEN!
 
   // Create sync job instance
