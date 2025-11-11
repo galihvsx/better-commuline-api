@@ -253,6 +253,7 @@ export const getSyncStatusRoute = createRoute({
 /**
  * POST /sync
  * Manually trigger a data synchronization
+ * NOTE: This route is functional but hidden from OpenAPI documentation
  */
 export const postSyncRoute = createRoute({
   method: 'post',

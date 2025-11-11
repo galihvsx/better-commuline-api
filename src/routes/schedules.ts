@@ -22,7 +22,7 @@ app.get('/', zValidator('query', scheduleQuerySchema), async (c) => {
     const { stationid, timefrom, timeto } = c.req.valid('query') as ScheduleQuery
 
     // Get environment variables
-    const upstreamApiUrl = process.env.COMMUTERLINE_API_BASE_URL!
+    const upstreamApiUrl = process.env.UPSTREAM_API_URL!
     const bearerToken = process.env.OFFICIAL_API_TOKEN || ''
 
     // Build upstream URL with query parameters
