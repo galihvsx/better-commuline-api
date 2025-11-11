@@ -8,3 +8,4 @@ dist/
 *.md
 src/README.test.md
 !README.md
+!DEPLOYMENT.md
