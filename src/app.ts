@@ -280,6 +280,25 @@ app.openapi(getSyncStatusRoute, async (c) => {
   }
 })
 
+/**
+ * GET /sync - Info endpoint for sync functionality
+ * Returns information about how to trigger sync
+ */
+app.get('/sync', (c) => {
+  return c.json({
+    message: 'Use POST method to trigger synchronization',
+    method: 'POST',
+    endpoint: '/sync',
+    description: 'Triggers manual data synchronization from upstream API',
+    status_endpoint: '/sync-status',
+    example: 'curl -X POST http://localhost:8917/sync',
+  })
+})
+
+/**
+ * POST /sync - Manual sync trigger endpoint
+ * Triggers async synchronization job
+ */
 app.post('/sync', async (c) => {
   try {
     const upstreamApiUrl = process.env.UPSTREAM_API_URL
@@ -324,6 +343,28 @@ app.post('/sync', async (c) => {
   }
 })
 
+// Build server URLs dynamically based on environment
+function getServerUrls() {
+  const servers = []
+
+  // Production URL
+  if (process.env.API_BASE_URL) {
+    servers.push({
+      url: process.env.API_BASE_URL,
+      description: 'Production server',
+    })
+  }
+
+  // Development server (always add as fallback)
+  const port = process.env.PORT || '8917'
+  servers.push({
+    url: `http://localhost:${port}`,
+    description: 'Development server',
+  })
+
+  return servers
+}
+
 // OpenAPI documentation endpoint
 app.doc('/openapi.json', {
   openapi: '3.1.0',
@@ -333,12 +374,7 @@ app.doc('/openapi.json', {
     description:
       'API for Indonesian Commuterline train schedules, stations, fares, and route maps. This API synchronizes static reference data (stations and route maps) daily at 23:59 WIB and provides real-time proxy endpoints for dynamic data (schedules and fares).',
   },
-  servers: [
-    {
-      url: 'http://localhost:8917',
-      description: 'Development server',
-    },
-  ],
+  servers: getServerUrls(),
   tags: [
     {
       name: 'Stations',

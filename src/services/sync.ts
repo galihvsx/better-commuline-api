@@ -69,7 +69,6 @@ export function createSyncJob(
         await db.insert(syncMetadata).values({
           timestamp: syncStartTime,
           status: 'in_progress',
-          errorMessage: null,
         })
         logWithTimestamp('Sync status updated to "in_progress"')
 
@@ -143,7 +142,6 @@ export function createSyncJob(
         await db.insert(syncMetadata).values({
           timestamp: syncEndTime,
           status: 'success',
-          errorMessage: null,
         })
 
         logWithTimestamp(

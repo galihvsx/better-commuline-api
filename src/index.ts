@@ -96,8 +96,16 @@ function initializeApplication(): void {
   // Step 1: Validate environment variables
   validateEnvironmentVariables()
 
-  // Step 2: Start cron scheduler for sync job
-  startCronScheduler()
+  // Step 2: Start cron scheduler for sync job (skip in Vercel)
+  // Vercel uses its own cron system configured in vercel.json
+  const isVercel = process.env.VERCEL === '1'
+  if (!isVercel) {
+    startCronScheduler()
+  } else {
+    console.log(
+      `[${new Date().toISOString()}] Running in Vercel environment - cron job managed by Vercel Cron`
+    )
+  }
 
   console.log(
     `[${new Date().toISOString()}] Application initialized successfully`
@@ -107,8 +115,12 @@ function initializeApplication(): void {
   )
 }
 
-// Initialize the application
-initializeApplication()
+// Initialize the application only when not in Vercel serverless environment
+// In Vercel, the app is imported by api/index.ts and doesn't need initialization
+const isVercelBuild = process.env.VERCEL === '1'
+if (!isVercelBuild) {
+  initializeApplication()
+}
 
-// Export app for Bun runtime
+// Export app for Bun runtime and Vercel
 export default app

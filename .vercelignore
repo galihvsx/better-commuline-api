@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+.wrangler
+
+# Development files
+.kiro
+.claude
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Tests
+tests
+TEST_SUMMARY.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Environment (will be set in Vercel dashboard)
+.env
+.env.example
+
+# Git
+.git
+.gitignore
+
+# Database
+drizzle
+
+# Vercel
+.vercel
