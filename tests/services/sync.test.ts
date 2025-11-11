@@ -1,13 +1,7 @@
-/**
- * Unit tests for Synchronization Job Service
- * Tests sync process, status management, and error handling
- */
-
 import { describe, test, expect, beforeEach, mock } from 'bun:test'
 import { createSyncJob, type SyncStatus } from '../../src/services/sync'
 import type { UpstreamApiClient } from '../../src/services/upstream-api'
 
-// Mock database module
 const mockDb = {
   insert: mock(() => ({
     values: mock(() => Promise.resolve()),
@@ -22,7 +16,6 @@ const mockDb = {
   })),
 }
 
-// Mock the db import
 mock.module('../db', () => ({
   db: mockDb,
 }))
@@ -32,7 +25,6 @@ describe('SyncJob', () => {
   const bearerToken = 'test-token'
 
   beforeEach(() => {
-    // Reset all mocks before each test
     mock.restore()
   })
 
@@ -68,7 +60,6 @@ describe('SyncJob', () => {
         getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
       }
 
-      // Mock createUpstreamApiClient
       mock.module('./upstream-api', () => ({
         createUpstreamApiClient: () => mockApiClient,
         UpstreamApiError: class UpstreamApiError extends Error {},
@@ -78,7 +69,6 @@ describe('SyncJob', () => {
 
       await expect(syncJob.runSync()).resolves.toBeUndefined()
 
-      // Verify API calls were made
       expect(mockApiClient.getStations).toHaveBeenCalled()
       expect(mockApiClient.getRouteMaps).toHaveBeenCalled()
     })
@@ -128,7 +118,6 @@ describe('SyncJob', () => {
       const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
       await syncJob.runSync()
 
-      // Verify insert was called (for in_progress and success statuses)
       expect(insertMock).toHaveBeenCalled()
     })
 
@@ -246,7 +235,6 @@ describe('SyncJob', () => {
       const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
       await syncJob.runSync()
 
-      // Verify delete was called for both stations and route maps
       expect(deleteMock).toHaveBeenCalled()
     })
   })
@@ -370,6 +358,259 @@ describe('SyncJob', () => {
       const status = await syncJob.getSyncStatus()
 
       expect(status?.timestamp).toMatch(/\+07:00$/)
+    })
+  })
+
+  describe('runScheduleSync', () => {
+    test('should call schedule sync service', async () => {
+      const mockScheduleSyncService = {
+        syncSchedules: mock(() => Promise.resolve()),
+        syncScheduleForStation: mock(() => Promise.resolve(0)),
+      }
+
+      mock.module('../../src/services/schedule-sync', () => ({
+        createScheduleSyncService: () => mockScheduleSyncService,
+      }))
+
+      const mockApiClient: UpstreamApiClient = {
+        getStations: mock(() => Promise.resolve({ status: 200, message: 'Success', data: [] })),
+        getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
+      }
+
+      mock.module('../../src/services/upstream-api', () => ({
+        createUpstreamApiClient: () => mockApiClient,
+        UpstreamApiError: class UpstreamApiError extends Error {},
+      }))
+
+      const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
+      await syncJob.runScheduleSync()
+
+      expect(mockScheduleSyncService.syncSchedules).toHaveBeenCalled()
+    })
+
+    test('should update sync metadata with success status', async () => {
+      const insertMock = mock(() => ({
+        values: mock(() => Promise.resolve()),
+      }))
+
+      const mockDb = {
+        insert: insertMock,
+        delete: mock(() => Promise.resolve()),
+        select: mock(() => ({
+          from: mock(() => ({
+            orderBy: mock(() => ({
+              limit: mock(() => Promise.resolve([])),
+            })),
+          })),
+        })),
+      }
+
+      mock.module('../../src/db', () => ({ db: mockDb }))
+
+      const mockScheduleSyncService = {
+        syncSchedules: mock(() => Promise.resolve()),
+        syncScheduleForStation: mock(() => Promise.resolve(0)),
+      }
+
+      mock.module('../../src/services/schedule-sync', () => ({
+        createScheduleSyncService: () => mockScheduleSyncService,
+      }))
+
+      const mockApiClient: UpstreamApiClient = {
+        getStations: mock(() => Promise.resolve({ status: 200, message: 'Success', data: [] })),
+        getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
+      }
+
+      mock.module('../../src/services/upstream-api', () => ({
+        createUpstreamApiClient: () => mockApiClient,
+        UpstreamApiError: class UpstreamApiError extends Error {},
+      }))
+
+      const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
+      await syncJob.runScheduleSync()
+
+      expect(insertMock).toHaveBeenCalled()
+    })
+
+    test('should handle schedule sync errors and update metadata', async () => {
+      const insertMock = mock(() => ({
+        values: mock(() => Promise.resolve()),
+      }))
+
+      const mockDb = {
+        insert: insertMock,
+        delete: mock(() => Promise.resolve()),
+        select: mock(() => ({
+          from: mock(() => ({
+            orderBy: mock(() => ({
+              limit: mock(() => Promise.resolve([])),
+            })),
+          })),
+        })),
+      }
+
+      mock.module('../../src/db', () => ({ db: mockDb }))
+
+      const mockScheduleSyncService = {
+        syncSchedules: mock(() => Promise.reject(new Error('Schedule sync failed'))),
+        syncScheduleForStation: mock(() => Promise.resolve(0)),
+      }
+
+      mock.module('../../src/services/schedule-sync', () => ({
+        createScheduleSyncService: () => mockScheduleSyncService,
+      }))
+
+      const mockApiClient: UpstreamApiClient = {
+        getStations: mock(() => Promise.resolve({ status: 200, message: 'Success', data: [] })),
+        getRouteMaps: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
+      }
+
+      mock.module('../../src/services/upstream-api', () => ({
+        createUpstreamApiClient: () => mockApiClient,
+        UpstreamApiError: class UpstreamApiError extends Error {},
+      }))
+
+      const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
+
+      await expect(syncJob.runScheduleSync()).rejects.toThrow('Schedule sync failed')
+      expect(insertMock).toHaveBeenCalled()
+    })
+  })
+
+  describe('runSync with schedule sync', () => {
+    test('should call schedule sync when ENABLE_SCHEDULE_SYNC is true', async () => {
+      process.env.ENABLE_SCHEDULE_SYNC = 'true'
+
+      const mockScheduleSyncService = {
+        syncSchedules: mock(() => Promise.resolve()),
+        syncScheduleForStation: mock(() => Promise.resolve(0)),
+      }
+
+      mock.module('../../src/services/schedule-sync', () => ({
+        createScheduleSyncService: () => mockScheduleSyncService,
+      }))
+
+      const mockApiClient: UpstreamApiClient = {
+        getStations: mock(() =>
+          Promise.resolve({
+            status: 200,
+            message: 'Success',
+            data: [],
+          })
+        ),
+        getRouteMaps: mock(() =>
+          Promise.resolve({
+            status: 200,
+            data: [],
+          })
+        ),
+        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
+      }
+
+      mock.module('../../src/services/upstream-api', () => ({
+        createUpstreamApiClient: () => mockApiClient,
+        UpstreamApiError: class UpstreamApiError extends Error {},
+      }))
+
+      const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
+      await syncJob.runSync()
+
+      expect(mockScheduleSyncService.syncSchedules).toHaveBeenCalled()
+
+      delete process.env.ENABLE_SCHEDULE_SYNC
+    })
+
+    test('should skip schedule sync when ENABLE_SCHEDULE_SYNC is false', async () => {
+      process.env.ENABLE_SCHEDULE_SYNC = 'false'
+
+      const mockScheduleSyncService = {
+        syncSchedules: mock(() => Promise.resolve()),
+        syncScheduleForStation: mock(() => Promise.resolve(0)),
+      }
+
+      mock.module('../../src/services/schedule-sync', () => ({
+        createScheduleSyncService: () => mockScheduleSyncService,
+      }))
+
+      const mockApiClient: UpstreamApiClient = {
+        getStations: mock(() =>
+          Promise.resolve({
+            status: 200,
+            message: 'Success',
+            data: [],
+          })
+        ),
+        getRouteMaps: mock(() =>
+          Promise.resolve({
+            status: 200,
+            data: [],
+          })
+        ),
+        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
+      }
+
+      mock.module('../../src/services/upstream-api', () => ({
+        createUpstreamApiClient: () => mockApiClient,
+        UpstreamApiError: class UpstreamApiError extends Error {},
+      }))
+
+      const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
+      await syncJob.runSync()
+
+      expect(mockScheduleSyncService.syncSchedules).not.toHaveBeenCalled()
+
+      delete process.env.ENABLE_SCHEDULE_SYNC
+    })
+
+    test('should continue main sync even if schedule sync fails', async () => {
+      process.env.ENABLE_SCHEDULE_SYNC = 'true'
+
+      const mockScheduleSyncService = {
+        syncSchedules: mock(() => Promise.reject(new Error('Schedule sync error'))),
+        syncScheduleForStation: mock(() => Promise.resolve(0)),
+      }
+
+      mock.module('../../src/services/schedule-sync', () => ({
+        createScheduleSyncService: () => mockScheduleSyncService,
+      }))
+
+      const mockApiClient: UpstreamApiClient = {
+        getStations: mock(() =>
+          Promise.resolve({
+            status: 200,
+            message: 'Success',
+            data: [],
+          })
+        ),
+        getRouteMaps: mock(() =>
+          Promise.resolve({
+            status: 200,
+            data: [],
+          })
+        ),
+        getSchedules: mock(() => Promise.resolve({ status: 200, data: [] })),
+        getFare: mock(() => Promise.resolve({ status: 200, data: [] })),
+      }
+
+      mock.module('../../src/services/upstream-api', () => ({
+        createUpstreamApiClient: () => mockApiClient,
+        UpstreamApiError: class UpstreamApiError extends Error {},
+      }))
+
+      const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
+      
+      await expect(syncJob.runSync()).resolves.toBeUndefined()
+      expect(mockScheduleSyncService.syncSchedules).toHaveBeenCalled()
+
+      delete process.env.ENABLE_SCHEDULE_SYNC
     })
   })
 })

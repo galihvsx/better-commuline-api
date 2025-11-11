@@ -1,8 +1,3 @@
-/**
- * Unit tests for Validation Schemas
- * Tests Zod schema validation for query parameters
- */
-
 import { describe, test, expect } from 'bun:test'
 import { scheduleQuerySchema, fareQuerySchema } from '../../src/schemas/validation'
 
@@ -393,7 +388,6 @@ describe('Validation Schemas', () => {
 
       const result = scheduleQuerySchema.parse(validData)
 
-      // TypeScript should infer these types correctly
       const stationid: string = result.stationid
       const timefrom: string = result.timefrom
       const timeto: string = result.timeto
@@ -411,7 +405,6 @@ describe('Validation Schemas', () => {
 
       const result = fareQuerySchema.parse(validData)
 
-      // TypeScript should infer these types correctly
       const stationfrom: string = result.stationfrom
       const stationto: string = result.stationto
 

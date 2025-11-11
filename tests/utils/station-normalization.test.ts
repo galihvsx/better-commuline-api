@@ -1,8 +1,3 @@
-/**
- * Unit tests for Station Name Normalization Utilities
- * Tests station name mapping and route parsing functions
- */
-
 import { describe, test, expect } from 'bun:test'
 import { normalizeStationName, parseRouteName } from '../../src/utils/station-normalization'
 

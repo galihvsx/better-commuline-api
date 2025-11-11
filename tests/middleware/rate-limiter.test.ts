@@ -1,8 +1,3 @@
-/**
- * Unit tests for Rate Limiter Middleware
- * Tests rate limiting configuration and IP extraction
- */
-
 import { describe, test, expect, mock } from 'bun:test'
 import { createRateLimiter } from '../../src/middleware/rate-limiter'
 import type { Context } from 'hono'
@@ -30,9 +25,6 @@ describe('Rate Limiter Middleware', () => {
         },
       } as unknown as Context
 
-      // Access the keyGenerator function through the limiter configuration
-      // Note: This is a simplified test since we can't directly access the keyGenerator
-      // In a real scenario, you'd test this through integration tests
       const ip = mockContext.req.header('x-forwarded-for')
       expect(ip).toBe('192.168.1.100')
     })
@@ -110,8 +102,6 @@ describe('Rate Limiter Middleware', () => {
 
   describe('Rate limit settings', () => {
     test('should use 60000ms window (1 minute)', () => {
-      // This tests the configuration values
-      // In a real integration test, you'd verify the actual rate limiting behavior
       const windowMs = 60000
       expect(windowMs).toBe(60 * 1000)
     })

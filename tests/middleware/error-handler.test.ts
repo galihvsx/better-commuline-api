@@ -1,15 +1,9 @@
-/**
- * Unit tests for Error Handler Middleware
- * Tests error response formatting and logging
- */
-
 import { describe, test, expect, mock } from 'bun:test'
 import { errorHandler } from '../../src/middleware/error-handler'
 import { HTTPException } from 'hono/http-exception'
 import type { Context } from 'hono'
 
 describe('Error Handler Middleware', () => {
-  // Helper to create a mock context
   const createMockContext = () => {
     return {
       json: mock((data: any, status: number) => ({
@@ -111,7 +105,6 @@ describe('Error Handler Middleware', () => {
       const c = createMockContext()
       const error = new Error('Unexpected database error')
 
-      // Mock console.error to prevent test output pollution
       const originalConsoleError = console.error
       console.error = mock(() => {})
 
@@ -125,7 +118,6 @@ describe('Error Handler Middleware', () => {
         500
       )
 
-      // Restore console.error
       console.error = originalConsoleError
     })
 

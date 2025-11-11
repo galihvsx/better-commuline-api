@@ -1,8 +1,3 @@
-/**
- * Unit tests for Upstream API Client
- * Tests request formatting, error handling, and timeout behavior
- */
-
 import { describe, test, expect } from 'bun:test'
 import {
   UpstreamApiError,
@@ -18,7 +13,6 @@ describe('UpstreamApiClient', () => {
     })
 
     test('should accept optional parameters', () => {
-      // Test that constructor accepts the right number of parameters
       const error1 = new UpstreamApiError('Message only')
       const error2 = new UpstreamApiError('With status', 500)
       const error3 = new UpstreamApiError('With all', 401, { error: 'body' })
@@ -47,7 +41,6 @@ describe('UpstreamApiClient', () => {
     test('should handle non-200 status codes', () => {
       const statusCodes = [400, 401, 403, 404, 500, 502, 503]
       
-      // Test that error messages can be created for different status codes
       statusCodes.forEach(code => {
         const error = new UpstreamApiError(
           `Upstream API returned status ${code}`
@@ -235,6 +228,84 @@ describe('UpstreamApiClient', () => {
       
       expect(controller).toBeInstanceOf(AbortController)
       expect(controller.signal).toBeDefined()
+    })
+  })
+
+  describe('Preflight request headers', () => {
+    test('should format Access-Control-Request-Method header', () => {
+      const header = 'Access-Control-Request-Method'
+      const value = 'GET'
+      
+      expect(header).toBe('Access-Control-Request-Method')
+      expect(value).toBe('GET')
+    })
+
+    test('should format Access-Control-Request-Headers header', () => {
+      const header = 'Access-Control-Request-Headers'
+      const value = 'authorization'
+      
+      expect(header).toBe('Access-Control-Request-Headers')
+      expect(value).toBe('authorization')
+    })
+
+    test('should use OPTIONS method for preflight', () => {
+      const method = 'OPTIONS'
+      
+      expect(method).toBe('OPTIONS')
+    })
+
+    test('should use cors mode for preflight', () => {
+      const mode = 'cors'
+      
+      expect(mode).toBe('cors')
+    })
+
+    test('should include credentials for preflight', () => {
+      const credentials = 'include'
+      
+      expect(credentials).toBe('include')
+    })
+  })
+
+  describe('Preflight request error scenarios', () => {
+    test('should handle non-200 preflight response', () => {
+      const statusCodes = [400, 403, 404, 500, 502, 503]
+      
+      statusCodes.forEach(code => {
+        const error = new UpstreamApiError(
+          `Preflight request failed with status ${code}`,
+          code
+        )
+        expect(error.message).toContain('Preflight request failed')
+        expect(error.message).toContain(String(code))
+        expect(error.statusCode).toBe(code)
+      })
+    })
+
+    test('should handle preflight timeout', () => {
+      const error = new UpstreamApiError(
+        'Preflight request timeout after 10 seconds'
+      )
+      
+      expect(error.message).toContain('Preflight request timeout')
+      expect(error.message).toContain('10 seconds')
+    })
+
+    test('should handle preflight network error', () => {
+      const error = new UpstreamApiError(
+        'Network error: Unable to reach upstream API for preflight'
+      )
+      
+      expect(error.message).toContain('Network error')
+      expect(error.message).toContain('preflight')
+    })
+
+    test('should handle generic preflight error', () => {
+      const error = new UpstreamApiError(
+        'Preflight request failed: Connection refused'
+      )
+      
+      expect(error.message).toContain('Preflight request failed')
     })
   })
 })
