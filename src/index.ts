@@ -1,16 +1,7 @@
-/**
- * Main Application Entry Point
- * Initializes the Hono application with middleware, routes, and scheduled jobs
- */
-
 import * as cron from 'node-cron'
 import { createSyncJob } from './services/sync'
 import app from './app'
 
-/**
- * Validate required environment variables on startup
- * Requirements: 6.1, 6.5
- */
 function validateEnvironmentVariables(): void {
   const requiredEnvVars = [
     'DATABASE_URL',
@@ -42,19 +33,12 @@ function validateEnvironmentVariables(): void {
   )
 }
 
-/**
- * Initialize and start the cron scheduler for sync job
- * Requirement: 6.5
- */
 function startCronScheduler(): void {
   const upstreamApiUrl = process.env.UPSTREAM_API_URL!
   const bearerToken = process.env.OFFICIAL_API_TOKEN!
 
-  // Create sync job instance
   const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
 
-  // Configure scheduled sync job
-  // Cron expression "59 16 * * *" runs at 16:59 UTC, which is 23:59 WIB (UTC+7)
   const cronExpression = process.env.SYNC_CRON_SCHEDULE || '59 16 * * *'
 
   cron.schedule(
@@ -85,19 +69,13 @@ function startCronScheduler(): void {
   )
 }
 
-/**
- * Application initialization
- */
 function initializeApplication(): void {
   console.log(
     `[${new Date().toISOString()}] Initializing Commuter Line API...`
   )
 
-  // Step 1: Validate environment variables
   validateEnvironmentVariables()
 
-  // Step 2: Start cron scheduler for sync job (skip in Vercel)
-  // Vercel uses its own cron system configured in vercel.json
   const isVercel = process.env.VERCEL === '1'
   if (!isVercel) {
     startCronScheduler()
@@ -115,12 +93,9 @@ function initializeApplication(): void {
   )
 }
 
-// Initialize the application only when not in Vercel serverless environment
-// In Vercel, the app is imported by api/index.ts and doesn't need initialization
 const isVercelBuild = process.env.VERCEL === '1'
 if (!isVercelBuild) {
   initializeApplication()
 }
 
-// Export app for Bun runtime and Vercel
 export default app

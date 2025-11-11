@@ -1,8 +1,3 @@
-/**
- * Upstream API Client for Indonesian Commuterline API
- * Base URL: https://api-partner.krl.co.id
- */
-
 export interface StationResponse {
   status: number
   message: string
@@ -59,6 +54,7 @@ export interface UpstreamApiClient {
     stationTo: string
   ): Promise<FareResponse>
   getRouteMaps(): Promise<RouteMapResponse>
+  sendPreflightRequest(url: string): Promise<boolean>
 }
 
 export class UpstreamApiError extends Error {
@@ -76,21 +72,16 @@ export function createUpstreamApiClient(
   baseUrl: string,
   bearerToken: string
 ): UpstreamApiClient {
-  const TIMEOUT_MS = 10000 // 10 seconds
+  const TIMEOUT_MS = 10000
 
-  /**
-   * Makes an HTTP request with timeout and error handling
-   */
   async function makeRequest<T>(
     endpoint: string,
     queryParams?: Record<string, string>
   ): Promise<T> {
-    // Create AbortController for timeout
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
     try {
-      // Build URL with query parameters
       const url = new URL(endpoint, baseUrl)
       if (queryParams) {
         Object.entries(queryParams).forEach(([key, value]) => {
@@ -98,7 +89,6 @@ export function createUpstreamApiClient(
         })
       }
 
-      // Make request with Bearer token authentication
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
@@ -107,10 +97,8 @@ export function createUpstreamApiClient(
         signal: controller.signal,
       })
 
-      // Clear timeout
       clearTimeout(timeoutId)
 
-      // Handle non-200 responses
       if (!response.ok) {
         const responseBody = await response.text()
         throw new UpstreamApiError(
@@ -120,13 +108,10 @@ export function createUpstreamApiClient(
         )
       }
 
-      // Parse and return JSON response
       return (await response.json()) as T
     } catch (error) {
-      // Clear timeout in case of error
       clearTimeout(timeoutId)
 
-      // Handle abort/timeout errors
       if (error instanceof Error && error.name === 'AbortError') {
         throw new UpstreamApiError(
           'Request timeout after 10 seconds',
@@ -135,7 +120,6 @@ export function createUpstreamApiClient(
         )
       }
 
-      // Handle network errors
       if (
         error instanceof TypeError &&
         error.message.includes('fetch')
@@ -147,12 +131,10 @@ export function createUpstreamApiClient(
         )
       }
 
-      // Re-throw UpstreamApiError as-is
       if (error instanceof UpstreamApiError) {
         throw error
       }
 
-      // Handle other errors
       throw new UpstreamApiError(
         `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         undefined,
@@ -190,6 +172,68 @@ export function createUpstreamApiClient(
 
     async getRouteMaps(): Promise<RouteMapResponse> {
       return makeRequest<RouteMapResponse>('/krl-webs/v1/routemap')
+    },
+
+    async sendPreflightRequest(url: string): Promise<boolean> {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+      try {
+        const response = await fetch(url, {
+          method: 'OPTIONS',
+          headers: {
+            'Access-Control-Request-Method': 'GET',
+            'Access-Control-Request-Headers': 'authorization',
+            Authorization: `Bearer ${bearerToken}`,
+          },
+          credentials: 'include',
+          mode: 'cors',
+          signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          throw new UpstreamApiError(
+            `Preflight request failed with status ${response.status}`,
+            response.status,
+            undefined
+          )
+        }
+
+        return true
+      } catch (error) {
+        clearTimeout(timeoutId)
+
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new UpstreamApiError(
+            'Preflight request timeout after 10 seconds',
+            undefined,
+            undefined
+          )
+        }
+
+        if (
+          error instanceof TypeError &&
+          error.message.includes('fetch')
+        ) {
+          throw new UpstreamApiError(
+            'Network error: Unable to reach upstream API for preflight',
+            undefined,
+            undefined
+          )
+        }
+
+        if (error instanceof UpstreamApiError) {
+          throw error
+        }
+
+        throw new UpstreamApiError(
+          `Preflight request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          undefined,
+          undefined
+        )
+      }
     },
   }
 }

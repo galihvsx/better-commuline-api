@@ -4,14 +4,8 @@ import { createSyncJob } from '../services/sync'
 
 const app = new Hono()
 
-/**
- * GET /sync-status
- * Retrieves the latest sync metadata from database
- * Returns timestamp (ISO 8601 with WIB timezone), status, and error (if failed)
- */
 app.get('/sync-status', async (c) => {
   try {
-    // Get environment variables
     const upstreamApiUrl = process.env.UPSTREAM_API_URL
     const bearerToken = process.env.OFFICIAL_API_TOKEN
 
@@ -21,13 +15,10 @@ app.get('/sync-status', async (c) => {
       })
     }
 
-    // Create sync job instance
     const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
 
-    // Get sync status
     const status = await syncJob.getSyncStatus()
 
-    // Handle case when no sync has occurred yet
     if (!status) {
       return c.json({
         timestamp: null,
@@ -36,7 +27,6 @@ app.get('/sync-status', async (c) => {
       })
     }
 
-    // Return sync status with timestamp, status, and error (if failed)
     const response: {
       timestamp: string
       status: string
@@ -46,7 +36,6 @@ app.get('/sync-status', async (c) => {
       status: status.status,
     }
 
-    // Include error message if status is failed
     if (status.status === 'failed' && status.errorMessage) {
       response.error = status.errorMessage
     }
@@ -65,15 +54,8 @@ app.get('/sync-status', async (c) => {
   }
 })
 
-/**
- * POST /sync
- * Manually triggers a data synchronization
- * Returns 409 if sync is already in progress
- * Returns 202 if sync has started successfully
- */
 app.post('/sync', async (c) => {
   try {
-    // Get environment variables
     const upstreamApiUrl = process.env.UPSTREAM_API_URL
     const bearerToken = process.env.OFFICIAL_API_TOKEN
 
@@ -83,26 +65,20 @@ app.post('/sync', async (c) => {
       })
     }
 
-    // Create sync job instance
     const syncJob = createSyncJob(upstreamApiUrl, bearerToken)
 
-    // Check current sync status from database
     const currentStatus = await syncJob.getSyncStatus()
 
-    // Return 409 if sync is already "in_progress"
     if (currentStatus && currentStatus.status === 'in_progress') {
       throw new HTTPException(409, {
         message: 'Sync is already in progress',
       })
     }
 
-    // Invoke runSync() asynchronously if not in progress
-    // Don't await - let it run in the background
     syncJob.runSync().catch((error) => {
       console.error('Background sync failed:', error)
     })
 
-    // Return 202 status with message indicating sync has started
     return c.json(
       {
         message: 'Sync has started',

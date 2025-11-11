@@ -1,8 +1,3 @@
-/**
- * Application Configuration
- * Sets up Hono app with middleware, routes, and OpenAPI documentation
- */
-
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { apiReference } from '@scalar/hono-api-reference'
 import { logger } from 'hono/logger'
@@ -22,34 +17,20 @@ import {
   postSyncRoute,
 } from './openapi/routes'
 
-// Define environment type
 type Env = {
   Variables: {
     db: any
   }
 }
 
-// Create OpenAPIHono app with proper typing
 const app = new OpenAPIHono<Env>()
 
-/**
- * Apply middleware in correct order:
- * 1. Logger - Request logging
- * 2. Database - Attach database instance to context
- * 3. Rate Limiter - Protect against abuse
- * 4. Error Handler - Global error handling
- * Requirement: 6.1
- */
 app.use('*', logger())
 app.use('*', databaseMiddleware())
 app.use('*', createRateLimiter())
 
-// Apply global error handler
 app.onError(errorHandler)
 
-/**
- * GET /stations - Retrieve all stations
- */
 app.openapi(getStationsRoute, async (c) => {
   try {
     const db = c.get('db')
@@ -64,9 +45,6 @@ app.openapi(getStationsRoute, async (c) => {
   }
 })
 
-/**
- * GET /schedules - Proxy real-time schedule data
- */
 app.openapi(getSchedulesRoute, async (c) => {
   try {
     const { stationid, timefrom, timeto } = c.req.valid('query')
@@ -136,9 +114,6 @@ app.openapi(getSchedulesRoute, async (c) => {
   }
 })
 
-/**
- * GET /fares - Proxy real-time fare data
- */
 app.openapi(getFaresRoute, async (c) => {
   try {
     const { stationfrom, stationto } = c.req.valid('query')
@@ -207,9 +182,6 @@ app.openapi(getFaresRoute, async (c) => {
   }
 })
 
-/**
- * GET /routemaps - Retrieve all route maps
- */
 app.openapi(getRouteMapsRoute, async (c) => {
   try {
     const db = c.get('db')
@@ -224,9 +196,6 @@ app.openapi(getRouteMapsRoute, async (c) => {
   }
 })
 
-/**
- * GET /sync-status - Retrieve sync status
- */
 app.openapi(getSyncStatusRoute, async (c) => {
   try {
     const upstreamApiUrl = process.env.UPSTREAM_API_URL
@@ -280,10 +249,6 @@ app.openapi(getSyncStatusRoute, async (c) => {
   }
 })
 
-/**
- * GET /sync - Info endpoint for sync functionality
- * Returns information about how to trigger sync
- */
 app.get('/sync', (c) => {
   return c.json({
     message: 'Use POST method to trigger synchronization',
@@ -295,10 +260,6 @@ app.get('/sync', (c) => {
   })
 })
 
-/**
- * POST /sync - Manual sync trigger endpoint
- * Triggers async synchronization job
- */
 app.post('/sync', async (c) => {
   try {
     const upstreamApiUrl = process.env.UPSTREAM_API_URL
@@ -343,11 +304,9 @@ app.post('/sync', async (c) => {
   }
 })
 
-// Build server URLs dynamically based on environment
 function getServerUrls() {
   const servers = []
 
-  // Production URL
   if (process.env.API_BASE_URL) {
     servers.push({
       url: process.env.API_BASE_URL,
@@ -355,7 +314,6 @@ function getServerUrls() {
     })
   }
 
-  // Development server (always add as fallback)
   const port = process.env.PORT || '8917'
   servers.push({
     url: `http://localhost:${port}`,
@@ -365,7 +323,6 @@ function getServerUrls() {
   return servers
 }
 
-// OpenAPI documentation endpoint
 app.doc('/openapi.json', {
   openapi: '3.1.0',
   info: {
@@ -399,7 +356,6 @@ app.doc('/openapi.json', {
   ],
 })
 
-// Scalar API documentation endpoint
 app.get(
   '/reference',
   apiReference({
@@ -410,11 +366,6 @@ app.get(
   })
 )
 
-/**
- * GET /health - Health check endpoint
- * Returns status, timestamp, and uptime
- * Requirement: 6.1
- */
 app.get('/health', (c) => {
   const uptimeSeconds = process.uptime()
   const timestamp = new Date().toISOString()
@@ -426,10 +377,6 @@ app.get('/health', (c) => {
   })
 })
 
-/**
- * GET / - Root endpoint
- * Provides basic API information and documentation link
- */
 app.get('/', (c) => {
   return c.json({
     status: 'healthy',

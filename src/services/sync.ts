@@ -1,41 +1,30 @@
-/**
- * Synchronization Job Service
- * Handles daily sync of stations and route maps from upstream API
- */
-
 import { db } from '../db'
 import { stations, routeMaps, syncMetadata } from '../db/schema'
 import { createUpstreamApiClient, UpstreamApiError } from './upstream-api'
+import { createScheduleSyncService } from './schedule-sync'
 import { eq, desc } from 'drizzle-orm'
 
 export interface SyncStatus {
-  timestamp: string // ISO 8601 format with WIB timezone
+  timestamp: string
   status: 'success' | 'failed' | 'in_progress'
   errorMessage?: string
 }
 
 export interface SyncJob {
   runSync(): Promise<void>
+  runScheduleSync(): Promise<void>
   getSyncStatus(): Promise<SyncStatus | null>
 }
 
-/**
- * Formats a date to ISO 8601 with WIB timezone (UTC+7)
- */
 function formatToWIB(date: Date): string {
-  // WIB is UTC+7
-  const wibOffset = 7 * 60 // 7 hours in minutes
+  const wibOffset = 7 * 60
   const utcTime = date.getTime()
   const wibTime = new Date(utcTime + wibOffset * 60 * 1000)
   
-  // Format as ISO 8601 with +07:00 timezone
   const isoString = wibTime.toISOString().replace('Z', '+07:00')
   return isoString
 }
 
-/**
- * Logs a message with timestamp
- */
 function logWithTimestamp(message: string, error?: unknown): void {
   const timestamp = new Date().toISOString()
   if (error) {
@@ -45,34 +34,82 @@ function logWithTimestamp(message: string, error?: unknown): void {
   }
 }
 
-/**
- * Creates a synchronization job instance
- */
 export function createSyncJob(
   upstreamApiUrl: string,
   bearerToken: string
 ): SyncJob {
   const apiClient = createUpstreamApiClient(upstreamApiUrl, bearerToken)
+  const scheduleSyncService = createScheduleSyncService(upstreamApiUrl, bearerToken)
 
   return {
-    /**
-     * Runs the synchronization process
-     * Updates status to "in_progress", fetches data from upstream API,
-     * replaces database records, and updates sync metadata
-     */
+    async runScheduleSync(): Promise<void> {
+      const syncStartTime = new Date()
+      logWithTimestamp('Starting schedule synchronization job')
+
+      try {
+        await db.insert(syncMetadata).values({
+          timestamp: syncStartTime,
+          status: 'in_progress',
+          errorMessage: 'Schedule sync in progress',
+        })
+        logWithTimestamp('Schedule sync status updated to "in_progress"')
+
+        await scheduleSyncService.syncSchedules()
+
+        const syncEndTime = new Date()
+        await db.insert(syncMetadata).values({
+          timestamp: syncEndTime,
+          status: 'success',
+          errorMessage: 'Schedule sync completed successfully',
+        })
+
+        logWithTimestamp(
+          `Schedule synchronization completed successfully at ${formatToWIB(syncEndTime)}`
+        )
+      } catch (error) {
+        const syncEndTime = new Date()
+        let errorMessage = 'Unknown error occurred during schedule sync'
+
+        if (error instanceof UpstreamApiError) {
+          errorMessage = `Upstream API error: ${error.message}`
+          if (error.statusCode) {
+            errorMessage += ` (Status: ${error.statusCode})`
+          }
+          if (error.responseBody) {
+            errorMessage += ` - Response: ${JSON.stringify(error.responseBody)}`
+          }
+        } else if (error instanceof Error) {
+          errorMessage = error.message
+        }
+
+        logWithTimestamp('Schedule synchronization failed', error)
+        logWithTimestamp(`Error details: ${errorMessage}`)
+
+        await db.insert(syncMetadata).values({
+          timestamp: syncEndTime,
+          status: 'failed',
+          errorMessage,
+        })
+
+        logWithTimestamp(
+          `Schedule sync status updated to "failed" at ${formatToWIB(syncEndTime)}`
+        )
+
+        throw error
+      }
+    },
+
     async runSync(): Promise<void> {
       const syncStartTime = new Date()
       logWithTimestamp('Starting synchronization job')
 
       try {
-        // Step 1: Update sync status to "in_progress"
         await db.insert(syncMetadata).values({
           timestamp: syncStartTime,
           status: 'in_progress',
         })
         logWithTimestamp('Sync status updated to "in_progress"')
 
-        // Step 2: Fetch stations from upstream API
         logWithTimestamp('Fetching stations from upstream API')
         const stationsResponse = await apiClient.getStations()
         
@@ -86,7 +123,6 @@ export function createSyncJob(
           `Fetched ${stationsResponse.data.length} stations from upstream API`
         )
 
-        // Step 3: Fetch route maps from upstream API
         logWithTimestamp('Fetching route maps from upstream API')
         const routeMapsResponse = await apiClient.getRouteMaps()
         
@@ -100,7 +136,6 @@ export function createSyncJob(
           `Fetched ${routeMapsResponse.data.length} route maps from upstream API`
         )
 
-        // Step 4: Replace all existing station records
         logWithTimestamp('Deleting existing station records')
         await db.delete(stations)
         
@@ -120,7 +155,6 @@ export function createSyncJob(
           `Inserted ${stationsResponse.data.length} station records`
         )
 
-        // Step 5: Replace all existing route map records
         logWithTimestamp('Deleting existing route map records')
         await db.delete(routeMaps)
         
@@ -137,7 +171,21 @@ export function createSyncJob(
           `Inserted ${routeMapsResponse.data.length} route map records`
         )
 
-        // Step 6: Update sync metadata with success status
+        const enableScheduleSync = process.env.ENABLE_SCHEDULE_SYNC !== 'false'
+        
+        if (enableScheduleSync) {
+          logWithTimestamp('Starting schedule synchronization')
+          
+          try {
+            await scheduleSyncService.syncSchedules()
+            logWithTimestamp('Schedule synchronization completed')
+          } catch (scheduleError) {
+            logWithTimestamp('Schedule synchronization failed, but continuing with main sync', scheduleError)
+          }
+        } else {
+          logWithTimestamp('Schedule synchronization skipped (ENABLE_SCHEDULE_SYNC=false)')
+        }
+
         const syncEndTime = new Date()
         await db.insert(syncMetadata).values({
           timestamp: syncEndTime,
@@ -148,7 +196,6 @@ export function createSyncJob(
           `Synchronization completed successfully at ${formatToWIB(syncEndTime)}`
         )
       } catch (error) {
-        // Handle synchronization errors
         const syncEndTime = new Date()
         let errorMessage = 'Unknown error occurred'
 
@@ -167,7 +214,6 @@ export function createSyncJob(
         logWithTimestamp('Synchronization failed', error)
         logWithTimestamp(`Error details: ${errorMessage}`)
 
-        // Update sync metadata with failed status
         await db.insert(syncMetadata).values({
           timestamp: syncEndTime,
           status: 'failed',
@@ -178,18 +224,12 @@ export function createSyncJob(
           `Sync status updated to "failed" at ${formatToWIB(syncEndTime)}`
         )
 
-        // Re-throw the error for caller to handle if needed
         throw error
       }
     },
 
-    /**
-     * Retrieves the latest sync metadata from database
-     * Returns null if no sync has occurred yet
-     */
     async getSyncStatus(): Promise<SyncStatus | null> {
       try {
-        // Query the latest sync metadata record
         const result = await db
           .select()
           .from(syncMetadata)

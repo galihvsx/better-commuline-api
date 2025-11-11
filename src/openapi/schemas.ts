@@ -1,9 +1,5 @@
 import { z } from '@hono/zod-openapi'
 
-/**
- * Station Schema
- * Represents a commuter line station entity
- */
 export const StationSchema = z.object({
   sta_id: z.string().openapi({
     example: 'BKS',
@@ -23,10 +19,6 @@ export const StationSchema = z.object({
   }),
 })
 
-/**
- * Schedule Schema
- * Represents real-time train schedule information
- */
 export const ScheduleSchema = z.object({
   train_id: z.string().openapi({
     example: '2200',
@@ -58,10 +50,6 @@ export const ScheduleSchema = z.object({
   }),
 })
 
-/**
- * Fare Schema
- * Represents real-time pricing information between two stations
- */
 export const FareSchema = z.object({
   sta_code_from: z.string().openapi({
     example: 'BKS',
@@ -89,10 +77,6 @@ export const FareSchema = z.object({
   }),
 })
 
-/**
- * Route Map Schema
- * Represents static banner map data
- */
 export const RouteMapSchema = z.object({
   area: z.number().openapi({
     example: 1,
@@ -104,10 +88,6 @@ export const RouteMapSchema = z.object({
   }),
 })
 
-/**
- * Sync Status Schema
- * Represents synchronization metadata
- */
 export const SyncStatusSchema = z.object({
   timestamp: z.string().nullable().openapi({
     example: '2024-01-15T23:59:00+07:00',
@@ -127,10 +107,6 @@ export const SyncStatusSchema = z.object({
   }),
 })
 
-/**
- * Error Response Schema
- * Standard error response format
- */
 export const ErrorSchema = z.object({
   error: z.string().openapi({
     example: 'stationid is required',
@@ -142,9 +118,6 @@ export const ErrorSchema = z.object({
   }),
 })
 
-/**
- * Response wrapper schemas
- */
 export const StationsResponseSchema = z.object({
   data: z.array(StationSchema),
 })
@@ -176,9 +149,6 @@ export const SyncTriggerResponseSchema = z.object({
   }),
 })
 
-/**
- * Query parameter schemas
- */
 export const ScheduleQuerySchema = z.object({
   stationid: z.string().openapi({
     param: {
