@@ -4,12 +4,18 @@ import cron from 'node-cron'
 import { createSyncJob } from './services/sync'
 import { databaseMiddleware } from './middleware/database'
 import { errorHandler } from './middleware/error-handler'
+import { createRateLimiter } from './middleware/rate-limiter'
+import stationsRoute from './routes/stations'
+import schedulesRoute from './routes/schedules'
+import faresRoute from './routes/fares'
+import syncRoute from './routes/sync'
 
 const app = new Hono()
 
 // Apply middleware in correct order
 app.use('*', logger())
 app.use('*', databaseMiddleware())
+app.use('*', createRateLimiter())
 
 // Apply global error handler
 app.onError(errorHandler)
@@ -56,6 +62,12 @@ cron.schedule(
 console.log(
   `Scheduled sync job configured: ${cronExpression} (Asia/Jakarta timezone)`
 )
+
+// Mount routes
+app.route('/stations', stationsRoute)
+app.route('/schedules', schedulesRoute)
+app.route('/fares', faresRoute)
+app.route('/', syncRoute)
 
 app.get('/', (c) => {
   return c.text('Hello Hono!')
