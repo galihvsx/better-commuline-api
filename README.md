@@ -111,7 +111,9 @@ Retrieve all KRL stations (cached from daily sync)
 ### Schedule Information
 
 #### `GET /schedules`
-Get train schedules for a specific station (proxied to upstream API)
+Get train schedules for a specific station
+
+> **Note**: Schedule caching refactor in progress. Currently proxies to upstream API. Future versions will serve from database cache with daily synchronization.
 
 **Query Parameters:**
 - `stationid` (required): Station ID (e.g., "BTA")
@@ -265,6 +267,8 @@ krl-api/
 │   ├── services/
 │   │   ├── sync.ts           # Sync job service
 │   │   └── upstream-api.ts   # Upstream API client
+│   ├── utils/
+│   │   └── station-normalization.ts  # Station name normalization
 │   └── index.ts              # Application entry point
 ├── drizzle/                  # Database migrations
 ├── docs/                     # Documentation files
@@ -284,17 +288,38 @@ This project uses PostgreSQL with Drizzle ORM for type-safe database operations.
 - `sta_name`: Station name
 - `group_wil`: Regional group
 - `fg_enable`: Enable flag
+- `metadata`: JSON field for additional data (e.g., active status)
+- `created_at`: Record creation timestamp
+- `updated_at`: Last update timestamp
+
+**schedules**: Cached schedule data for all stations
+- `id` (PK): Unique schedule identifier (format: `sc_krl_{station_id}_{train_id}`)
+- `station_id` (FK): Reference to stations table
+- `origin_station_id` (FK): Origin station reference
+- `destination_station_id` (FK): Destination station reference
+- `train_id`: Train identifier
+- `line_name`: Line name (e.g., "Commuter Line")
+- `route_name`: Route description (e.g., "BOGOR-JAKARTA KOTA")
+- `departs_at`: Departure timestamp with timezone
+- `arrives_at`: Arrival timestamp with timezone
+- `metadata`: JSON field for additional data (e.g., line color)
+- `created_at`: Record creation timestamp
+- `updated_at`: Last update timestamp
+- **Indexes**: `station_id`, `train_id`, `departs_at` for query performance
 
 **route_maps**: Cached route map data
 - `id` (PK): Auto-increment ID
 - `area`: Area identifier
 - `permalink`: Map image URL
+- `created_at`: Record creation timestamp
+- `updated_at`: Last update timestamp
 
 **sync_metadata**: Synchronization history
 - `id` (PK): Auto-increment ID
 - `timestamp`: Sync execution time
 - `status`: Sync status (success/failed/in_progress)
 - `error_message`: Error details if failed
+- `created_at`: Record creation timestamp
 
 ---
 
